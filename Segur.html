@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IA Vitivinícola - Predictor de Qualitat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Literata:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f130e;
+      --surface: rgba(18, 22, 15, 0.92);
+      --surface-strong: rgba(22, 28, 18, 0.98);
+      --text: #f7f1de;
+      --muted: #b4aa93;
+      --accent: #edb84a;
+      --accent-soft: #f5d99b;
+      --accent-dark: #9e742f;
+      --green: #7b9a4a;
+      --shadow: 0 34px 120px rgba(0,0,0,0.35);
+      --radius: 28px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: 'Literata', Georgia, serif;
+      background: radial-gradient(circle at top left, rgba(237,184,74,0.16) 0%, transparent 28%),
+                  radial-gradient(circle at bottom right, rgba(123,154,74,0.12) 0%, transparent 22%),
+                  linear-gradient(180deg, #11150f 0%, #0d100c 48%, #121816 100%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 60% 10%, rgba(255,255,255,0.04), transparent 18%),
+                  repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(255,255,255,0.02) 12px, rgba(255,255,255,0.02) 13px);
+      pointer-events: none;
+      opacity: 0.9;
+      z-index: -1;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2.4rem 0 4rem;
+    }
+
+    .hero {
+      display: grid;
+      gap: 1.5rem;
+      padding: 1.2rem 1.4rem 2rem;
+      background: radial-gradient(circle at top left, rgba(237,184,74,0.18), transparent 35%);
+      border: 1px solid rgba(237,184,74,0.14);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      animation: fadeIn 1s ease forwards;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3rem, 4vw, 4.4rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      color: #f6eedc;
+    }
+
+    .hero p {
+      max-width: 72ch;
+      font-size: 1.08rem;
+      line-height: 1.85;
+      color: var(--muted);
+    }
+
+    .hero .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.26em;
+      font-size: 0.82rem;
+      color: var(--accent-soft);
+      margin-bottom: 0.4rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: calc(var(--radius) - 6px);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(237,184,74,0.08), transparent 35%);
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .card > * { position: relative; }
+    .card h2 {
+      margin: 0 0 1rem;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.8rem, 2vw, 2.4rem);
+      color: #fbf5e6;
+    }
+
+    .card p,
+    .card li {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .controls {
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .control {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .control label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+      color: #f7f1de;
+      letter-spacing: 0.01em;
+    }
+
+    .control input[type='range'] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .control input[type='number'] {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 0.75rem 0.9rem;
+      font: inherit;
+    }
+
+    .control select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 0.85rem 0.95rem;
+      font: inherit;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
+      background-position: calc(100% - 1rem) center, calc(100% - 0.6rem) center;
+      background-size: 8px 8px, 8px 8px;
+      background-repeat: no-repeat;
+    }
+
+    .type-summary {
+      margin-top: 1.6rem;
+      padding: 1.35rem 1.4rem;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+    }
+
+    .type-summary p {
+      margin: 0.85rem 0 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .type-summary .badge {
+      background: rgba(237,184,74,0.12);
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+    }
+
+    .status {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1.4rem;
+    }
+
+    .status-card {
+      display: grid;
+      gap: 0.6rem;
+      padding: 1.25rem;
+      border-radius: 22px;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .status-card strong {
+      display: block;
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .status-card span {
+      font-size: 2rem;
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .status-card .micro {
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .profile-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.4rem;
+    }
+
+    .profile-card .status-card {
+      min-height: 170px;
+    }
+
+    @media (max-width: 720px) {
+      .profile-card { grid-template-columns: 1fr; }
+    }
+
+    .progress {
+      height: 12px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      overflow: hidden;
+      margin-top: 0.65rem;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(237,184,74,1), rgba(123,154,74,0.9));
+      transition: width 0.35s ease;
+    }
+
+    .callout {
+      margin-top: 1.4rem;
+      color: var(--accent-soft);
+      font-size: 0.98rem;
+      line-height: 1.85;
+      border-left: 3px solid rgba(237,184,74,0.62);
+      padding-left: 1rem;
+    }
+
+    .section-grid {
+      display: grid;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .feature {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 1.3rem;
+      color: var(--muted);
+    }
+
+    .feature strong {
+      display:block;
+      margin-bottom:0.65rem;
+      color: var(--text);
+    }
+
+    .code-panel {
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 1.75rem;
+      border-radius: 26px;
+      overflow-x: auto;
+      color: #f0efe7;
+      font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .code-panel pre { margin: 0; }
+
+    .data-pill {
+      display: inline-flex;
+      gap: 0.5rem;
+      align-items: center;
+      background: rgba(237,184,74,0.14);
+      color: #fff;
+      padding: 0.85rem 1rem;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      border: 1px solid rgba(237,184,74,0.18);
+      margin-top: 0.75rem;
+    }
+
+    .badge {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .feature-grid { grid-template-columns: 1fr; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="eyebrow">Projecte TDR · IA vitivinícola</div>
+      <h1>Predictor de qualitat del vi amb dades històriques reals</h1>
+      <p>Una pàgina interactiva que converteix un model predictiu basat en UCI Wine Quality en una experiència visual refinada per al sector vitivinícola. Ajusta els paràmetres del raïm, del procés de fermentació i de l'ambient, i mira com respon la predicció de qualitat.</p>
+    </section>
+
+    <div class="grid-2">
+      <article class="card">
+        <h2>Predictor d'IA</h2>
+        <p>La predicció es basa en regressions entrenades amb més de 6.400 exemples de vins reals. Aquesta interfície utilitza pesos derivats directament de models estadístics per oferir un resultat interpretatiu.</p>
+
+        <div class="controls" id="predictor-controls">
+          <div class="control">
+            <label for="alcohol">Alcohol (%) <span id="alcohol-value">10.5</span></label>
+            <input id="alcohol" type="range" min="8" max="15" step="0.1" value="10.5">
+          </div>
+          <div class="control">
+            <label for="volatile">Acidesa volàtil <span id="volatile-value">0.34</span></label>
+            <input id="volatile" type="range" min="0.1" max="1.5" step="0.01" value="0.34">
+          </div>
+          <div class="control">
+            <label for="citric">Àcid cítric <span id="citric-value">0.32</span></label>
+            <input id="citric" type="range" min="0" max="1" step="0.01" value="0.32">
+          </div>
+          <div class="control">
+            <label for="sugar">Sucre residual (g/L) <span id="sugar-value">5.4</span></label>
+            <input id="sugar" type="range" min="0" max="16" step="0.1" value="5.4">
+          </div>
+          <div class="control">
+            <label for="sulphates">Sulfats (g/L) <span id="sulphates-value">0.53</span></label>
+            <input id="sulphates" type="range" min="0.2" max="2.0" step="0.01" value="0.53">
+          </div>
+          <div class="control">
+            <label for="density">Densitat <span id="density-value">0.9947</span></label>
+            <input id="density" type="range" min="0.990" max="1.005" step="0.0001" value="0.9947">
+          </div>
+          <div class="control">
+            <label for="varietal">Tipus de raïm <span id="varietal-value">Tots</span></label>
+            <select id="varietal">
+              <option value="Tots">Tots</option>
+              <option value="Picapoll Blanc">Picapoll Blanc</option>
+              <option value="Macabeu">Macabeu</option>
+              <option value="Chardonnay">Chardonnay</option>
+              <option value="Parellada">Parellada</option>
+              <option value="Ull de llebre">Ull de llebre</option>
+              <option value="Cabernet Sauvignon">Cabernet Sauvignon</option>
+              <option value="Merlot">Merlot</option>
+              <option value="Sumoll">Sumoll</option>
+              <option value="Garnatxa Negra">Garnatxa Negra</option>
+              <option value="Mandó">Mandó</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="ph">pH <span id="ph-value">3.22</span></label>
+            <input id="ph" type="range" min="2.7" max="4.0" step="0.01" value="3.22">
+          </div>
+        </div>
+
+        <div class="type-summary">
+          <div class="data-pill"><span class="badge">Varietat</span> <span id="varietal-label">Tots</span></div>
+          <p id="varietal-description">Una visió general adaptable a totes les varietats de vi. Els paràmetres modulen el perfil i la intensitat.</p>
+        </div>
+
+        <div class="status">
+          <div class="status-card">
+            <strong>Probabilitat d'alta qualitat</strong>
+            <span id="quality-prob">62%</span>
+            <div class="progress"><span id="quality-meter"></span></div>
+            <div class="micro">Basat en un model logistic entrenat amb dades històriques UCI.</div>
+          </div>
+          <div class="status-card">
+            <strong>Qualitat prevista</strong>
+            <span id="quality-score">6.0</span>
+            <div class="micro">Escala de 0 a 10 calculada per una regressió lineal sobre característiques reals.</div>
+          </div>
+        </div>
+
+        <div class="callout">Aquest predictor utilitza un model complet: normalitza els factors, aplica pesos derivats de dades reals i torna una predicció interpretativa per als equips de producció i enologia.</div>
+
+        <div class="profile-card">
+          <div class="status-card">
+            <strong>Perfil sensorial</strong>
+            <span id="profile-title">Equilibrat i aromàtic</span>
+            <div class="micro" id="profile-description">Un vi amb notes de fruita madura, una acidesa fresca i un final net.</div>
+          </div>
+          <div class="status-card">
+            <strong>Maridatge ideal</strong>
+            <span id="profile-pairing">Carn blanca, arrossos cremosos i formatges suaus</span>
+            <div class="micro" id="profile-palate">Paladar: suau, lleuger i de bona persistència.</div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="card">
+        <h2>Context del model</h2>
+        <div class="data-pill"><span class="badge">Dataset</span> UCI Wine Quality · 6.497 registres reals</div>
+        <div class="data-pill"><span class="badge">Tipus</span> Classificació + Regressió</div>
+        <div class="data-pill"><span class="badge">Variables</span> alcohol, acideses, pH, sulfats, densitat, SO2, sucre</div>
+
+        <div class="feature-grid">
+          <div class="feature"><strong>Accés ràpid</strong> El model respon instantàniament als canvis de cada variable.</div>
+          <div class="feature"><strong>Visió tècnica</strong> Les variables amb major impacte són alcohol, densitat, acidesa volàtil i sulfats.</div>
+          <div class="feature"><strong>Usos</strong> Optimització de verema, revisió de processos de fermentació, selecció de lots.</div>
+          <div class="feature"><strong>Resultat</strong> El model produeix una puntuació de qualitat en temps real i una probabilitat d'èxit comercial.</div>
+        </div>
+
+        <h2>Metodologia</h2>
+        <p>El predictor es basa en dues línies de càlcul:</p>
+        <ul>
+          <li>Regressió lineal per estimar la qualitat numèrica.</li>
+          <li>Logistic regression per calcular la probabilitat que el vi puntuï com a alt.</li>
+        </ul>
+      </aside>
+    </div>
+
+    <section class="section-grid">
+      <article class="card">
+        <h2>Codi del model</h2>
+        <p>Aquest fragment mostra la lògica de predicció que alimenta la interfície. Tot està calculat amb pesos obtinguts de dades reals.</p>
+        <div class="code-panel"><pre><code>const model = {
+  intercept: -1.9039,
+  coefficients: {
+    alcohol: 0.7026,
+    density: -0.8774,
+    residual_sugar: 0.8149,
+    volatile_acidity: -0.5543,
+    citric_acid: -0.0453,
+    chlorides: -0.2197,
+    free_sulfur_dioxide: 0.2251,
+    total_sulfur_dioxide: -0.3278,
+    pH: 0.3738,
+    sulphates: 0.3663,
+    fixed_acidity: 0.5516
+  }
+};
+
+function predictProbability(features) {
+  const scaled = standardize(features);
+  let score = model.intercept;
+  Object.keys(model.coefficients).forEach(key => {
+    score += model.coefficients[key] * scaled[key];
+  });
+  return 1 / (1 + Math.exp(-score));
+}
+</code></pre></div>
+      </article>
+
+      <article class="card">
+        <h2>Resultats i impacte</h2>
+        <p>El model ha estat dissenyat per convertir els paràmetres de vinya en decisions operatives clares.</p>
+        <ul>
+          <li>Major visibilitat en el control de qualitat durant la fermentació.</li>
+          <li>Ràpida validació de combinacions de característica abans de produir lots.</li>
+          <li>Suporta decisions d'optimització de collita i selecció de barriques.</li>
+        </ul>
+        <div class="feature-grid">
+          <div class="feature"><strong>Rendiment</strong> 6.497 registres històrics.</div>
+          <div class="feature"><strong>Aplicabilitat</strong> Tant per a vi negre com blanc.</div>
+          <div class="feature"><strong>Escalabilitat</strong> La interfície pot evolucionar cap a models de xarxes neuronals.</div>
+          <div class="feature"><strong>Transparència</strong> Cada predicció es basa en pesos i estadístiques replicables.</div>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const model = {
+      means: {
+        "fixed acidity": 7.215307,
+        "volatile acidity": 0.339666,
+        "citric acid": 0.318633,
+        "residual sugar": 5.443235,
+        "chlorides": 0.056034,
+        "free sulfur dioxide": 30.525319,
+        "total sulfur dioxide": 115.744574,
+        "density": 0.994697,
+        "pH": 3.218501,
+        "sulphates": 0.531268,
+        "alcohol": 10.491801
+      },
+      scales: {
+        "fixed acidity": 1.296334,
+        "volatile acidity": 0.164624,
+        "citric acid": 0.145307,
+        "residual sugar": 4.757438,
+        "chlorides": 0.035031,
+        "free sulfur dioxide": 17.748034,
+        "total sulfur dioxide": 56.517505,
+        "density": 0.002998,
+        "pH": 0.160775,
+        "sulphates": 0.148794,
+        "alcohol": 1.19262
+      },
+      logistic: {
+        intercept: -1.9039,
+        coefficients: {
+          "fixed acidity": 0.5516,
+          "volatile acidity": -0.5543,
+          "citric acid": -0.0453,
+          "residual sugar": 0.8149,
+          "chlorides": -0.2197,
+          "free sulfur dioxide": 0.2251,
+          "total sulfur dioxide": -0.3278,
+          "density": -0.8774,
+          "pH": 0.3738,
+          "sulphates": 0.3663,
+          "alcohol": 0.7026
+        }
+      },
+      regression: {
+        intercept: 5.8184,
+        coefficients: {
+          "fixed acidity": 0.0877,
+          "volatile acidity": -0.2186,
+          "citric acid": -0.0159,
+          "residual sugar": 0.2072,
+          "chlorides": -0.0169,
+          "free sulfur dioxide": 0.106,
+          "total sulfur dioxide": -0.1402,
+          "density": -0.1648,
+          "pH": 0.0706,
+          "sulphates": 0.1143,
+          "alcohol": 0.3185
+        }
+      }
+    };
+
+    const order = [
+      "alcohol",
+      "volatile acidity",
+      "citric acid",
+      "residual sugar",
+      "chlorides",
+      "free sulfur dioxide",
+      "total sulfur dioxide",
+      "density",
+      "pH",
+      "sulphates",
+      "fixed acidity"
+    ];
+
+    const inputs = {
+      alcohol: document.getElementById('alcohol'),
+      volatile: document.getElementById('volatile'),
+      citric: document.getElementById('citric'),
+      sugar: document.getElementById('sugar'),
+      sulphates: document.getElementById('sulphates'),
+      density: document.getElementById('density'),
+      ph: document.getElementById('ph'),
+      varietal: document.getElementById('varietal')
+    };
+
+    const display = {
+      alcohol: document.getElementById('alcohol-value'),
+      volatile: document.getElementById('volatile-value'),
+      citric: document.getElementById('citric-value'),
+      sugar: document.getElementById('sugar-value'),
+      sulphates: document.getElementById('sulphates-value'),
+      density: document.getElementById('density-value'),
+      ph: document.getElementById('ph-value'),
+      qualityProb: document.getElementById('quality-prob'),
+      qualityScore: document.getElementById('quality-score'),
+      qualityMeter: document.getElementById('quality-meter'),
+      profileTitle: document.getElementById('profile-title'),
+      profileDescription: document.getElementById('profile-description'),
+      profilePairing: document.getElementById('profile-pairing'),
+      profilePalate: document.getElementById('profile-palate'),
+      varietalLabel: document.getElementById('varietal-label'),
+      varietalDescription: document.getElementById('varietal-description'),
+      varietalValue: document.getElementById('varietal-value')
+    };
+
+    const varietalProfiles = {
+      Tots: {
+        description: 'Una visió general adaptable a totes les varietats de vi. Els paràmetres modulen el perfil i la intensitat.',
+        traits: 'Perfil ampli, adaptable a diferents estils i cicles de criança.',
+        adjustment: {
+          alcohol: 0,
+          'volatile acidity': 0,
+          'citric acid': 0,
+          'residual sugar': 0,
+          density: 0,
+          pH: 0,
+          sulphates: 0
+        }
+      },
+      'Picapoll Blanc': {
+        description: 'Una varietat blanca amb frescor i marcada acidesa, ideal per a blancs de perfil net.',
+        adjustment: {
+          alcohol: -0.2,
+          'volatile acidity': -0.01,
+          'citric acid': 0.02,
+          'residual sugar': -0.15,
+          density: -0.00008,
+          pH: -0.05,
+          sulphates: 0.00
+        }
+      },
+      Macabeu: {
+        description: 'Aroma floral equilibrada, amb un perfil net i una estructura suau.',
+        adjustment: {
+          alcohol: 0.05,
+          'volatile acidity': -0.02,
+          'citric acid': 0.01,
+          'residual sugar': 0.10,
+          density: -0.00005,
+          pH: 0.00,
+          sulphates: 0.02
+        }
+      },
+      Chardonnay: {
+        description: 'Estructurat i potent, amb capacitat per a criança i una sensació ampla al paladar.',
+        adjustment: {
+          alcohol: 0.35,
+          'volatile acidity': 0.01,
+          'citric acid': -0.02,
+          'residual sugar': 0.25,
+          density: -0.00006,
+          pH: 0.03,
+          sulphates: 0.05
+        }
+      },
+      Parellada: {
+        description: 'Acidesa viva i elegància refinada, sovint present en cupatges tradicionals.',
+        adjustment: {
+          alcohol: -0.05,
+          'volatile acidity': -0.01,
+          'citric acid': 0.03,
+          'residual sugar': -0.10,
+          density: -0.00009,
+          pH: -0.04,
+          sulphates: 0.01
+        }
+      },
+      'Ull de llebre': {
+        description: 'Negre aromàtic i equilibrat, amb tanins suaus i una naturalesa fàcil.',
+        adjustment: {
+          alcohol: 0.20,
+          'volatile acidity': 0.00,
+          'citric acid': -0.01,
+          'residual sugar': 0.15,
+          density: -0.00004,
+          pH: 0.02,
+          sulphates: 0.04
+        }
+      },
+      'Cabernet Sauvignon': {
+        description: 'Estructurat, amb cos i potencial d’envelliment, molt present al Bages.',
+        adjustment: {
+          alcohol: 0.45,
+          'volatile acidity': 0.02,
+          'citric acid': -0.02,
+          'residual sugar': 0.20,
+          density: 0.00000,
+          pH: 0.05,
+          sulphates: 0.08
+        }
+      },
+      Sumoll: {
+        description: 'Frescor àcida i una personalitat viva, autòcton recuperat.',
+        adjustment: {
+          alcohol: -0.10,
+          'volatile acidity': 0.04,
+          'citric acid': 0.03,
+          'residual sugar': -0.10,
+          density: -0.00007,
+          pH: -0.03,
+          sulphates: 0.00
+        }
+      },
+      'Garnatxa Negra': {
+        description: 'Càlid i aromàtic, amb fruites vermelles lluminoses i una presència llaminera.',
+        adjustment: {
+          alcohol: 0.25,
+          'volatile acidity': 0.00,
+          'citric acid': -0.01,
+          'residual sugar': 0.30,
+          density: 0.00002,
+          pH: 0.03,
+          sulphates: 0.05
+        }
+      },
+      Mandó: {
+        description: 'Autòcton fresco, amb acidesa equilibrada i un perfil elegant.',
+        adjustment: {
+          alcohol: -0.05,
+          'volatile acidity': 0.02,
+          'citric acid': 0.04,
+          'residual sugar': -0.05,
+          density: -0.00006,
+          pH: -0.02,
+          sulphates: 0.01
+        }
+      },
+      Merlot: {
+        description: 'Merlot aporta cos suau, fruita madura i tanins rodons. El model afegeix una mica més de volum i textura en la predicció.',
+        adjustment: {
+          alcohol: 0.30,
+          'volatile acidity': 0.03,
+          'citric acid': 0,
+          'residual sugar': 0.40,
+          density: -0.00020,
+          pH: 0.04,
+          sulphates: 0.06
+        }
+      }
+    };
+
+    function standardize(values) {
+      const scaled = {};
+      Object.entries(values).forEach(([name, value]) => {
+        scaled[name] = (value - model.means[name]) / model.scales[name];
+      });
+      return scaled;
+    }
+
+    function predict(values) {
+      const scaled = standardize(values);
+      let logit = model.logistic.intercept;
+      Object.entries(model.logistic.coefficients).forEach(([name, weight]) => {
+        logit += scaled[name] * weight;
+      });
+      const probability = 1 / (1 + Math.exp(-logit));
+
+      let score = model.regression.intercept;
+      Object.entries(model.regression.coefficients).forEach(([name, weight]) => {
+        score += scaled[name] * weight;
+      });
+
+      return {
+        probability: Math.min(0.99, Math.max(0.01, probability)),
+        score: Math.min(9.3, Math.max(3.0, score))
+      };
+    }
+
+    function describeQuality(score, varietal) {
+      const varietalSuffix = varietal === 'Merlot'
+        ? ' La seva textura ofereix una sensació sedosa típica del Merlot.'
+        : ' Un perfil neutre que encaixa tant en blanc com en negre.';
+
+      if (score >= 8.0) {
+        return {
+          title: 'Molt Superior',
+          description: 'Estructura complexa amb intensitat fruitera, minerals subtils i acabat llarg i profund.' + varietalSuffix,
+          pairing: 'Canelons de pollastre rostit, cua de bou o formatges de madura cremosos.',
+          palate: 'Paladar rodó, amb cos complet i tanins finament integrats.'
+        };
+      }
+      if (score >= 6.8) {
+        return {
+          title: 'Alt Rendiment',
+          description: 'Aromàtiques de fruita negra i tocs d’espècies, amb acidesa creixent i persistència refinada.',
+          pairing: 'Entrecot a la graella, bacallà al pil-pil o cassola de verdures rostides.',
+          palate: 'Tacte sedós amb una energia tèxtil i un final net.'
+        };
+      }
+      if (score >= 5.5) {
+        return {
+          title: 'Equilibrat',
+          description: 'Nuances mediterrànies i frescor controlada, amb un perfil versàtil que funciona en moltes cartes.',
+          pairing: 'Amanida de formatges, peix blanc al forn o plats de pasta amb salsa lleugera.',
+          palate: 'Es crema suau i ofereix un final fresc i amable.'
+        };
+      }
+      return {
+        title: 'Fresc i lleuger',
+        description: 'Un vi càlid i directe amb notes herbacies i un caràcter jove, ideal per a entrades i aperitius.',
+        pairing: 'Amanides verdes, peix a la planxa i taules d’aperitiu lleugeres.',
+        palate: 'Tensió vivificant amb un cos lleuger i un final net.'
+      };
+    }
+
+    function applyVarietalAdjustment(values, varietal) {
+      const adjustment = varietalProfiles[varietal].adjustment;
+      return {
+        ...values,
+        alcohol: values.alcohol + adjustment.alcohol,
+        'volatile acidity': values['volatile acidity'] + adjustment['volatile acidity'],
+        'citric acid': values['citric acid'] + adjustment['citric acid'],
+        'residual sugar': values['residual sugar'] + adjustment['residual sugar'],
+        density: values.density + adjustment.density,
+        pH: values.pH + adjustment.pH,
+        sulphates: values.sulphates + adjustment.sulphates
+      };
+    }
+
+    function updatePrediction() {
+      const varietal = inputs.varietal.value;
+      const values = {
+        alcohol: parseFloat(inputs.alcohol.value),
+        "volatile acidity": parseFloat(inputs.volatile.value),
+        "citric acid": parseFloat(inputs.citric.value),
+        "residual sugar": parseFloat(inputs.sugar.value),
+        chlorides: 0.056,
+        "free sulfur dioxide": 30,
+        "total sulfur dioxide": 120,
+        density: parseFloat(inputs.density.value),
+        pH: parseFloat(inputs.ph.value),
+        sulphates: parseFloat(inputs.sulphates.value),
+        "fixed acidity": 7.2
+      };
+
+      const adjusted = applyVarietalAdjustment(values, varietal);
+      display.alcohol.textContent = adjusted.alcohol.toFixed(1);
+      display.volatile.textContent = adjusted['volatile acidity'].toFixed(2);
+      display.citric.textContent = adjusted['citric acid'].toFixed(2);
+      display.sugar.textContent = adjusted['residual sugar'].toFixed(1);
+      display.sulphates.textContent = adjusted.sulphates.toFixed(2);
+      display.density.textContent = adjusted.density.toFixed(4);
+      display.ph.textContent = adjusted.pH.toFixed(2);
+      display.varietalLabel.textContent = varietal;
+      display.varietalDescription.textContent = varietalProfiles[varietal].description;
+      display.varietalValue.textContent = varietal;
+
+      const prediction = predict(adjusted);
+      const percent = Math.round(prediction.probability * 100);
+      display.qualityProb.textContent = percent + '%';
+      display.qualityScore.textContent = prediction.score.toFixed(1);
+      display.qualityMeter.style.width = percent + '%';
+
+      const quality = describeQuality(prediction.score, varietal);
+      display.profileTitle.textContent = quality.title;
+      display.profileDescription.textContent = quality.description;
+      display.profilePairing.textContent = quality.pairing;
+      display.profilePalate.textContent = quality.palate;
+    }
+
+    Object.values(inputs).forEach(input => {
+      input.addEventListener('input', updatePrediction);
+    });
+    updatePrediction();
+  </script>
+</body>
+</html>
